@@ -1,0 +1,12 @@
+# Xcode
+*.xcworkspace
+*.xcuserdata
+DerivedData/
+build/
+
+# macOS
+.DS_Store
+
+# Swift Packages
+.package.resolved
+
