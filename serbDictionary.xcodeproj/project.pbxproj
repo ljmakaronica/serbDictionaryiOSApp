@@ -134,7 +134,14 @@
 			);
 			target = BD24AF772D3F3A7000C03E0A /* SharedDictionary */;
 		};
-		BD24AFAA2D3F405F00C03E0A /* Exceptions for "serbDictionary" folder in "SharedDictionary" target */ = {
+		BD372EEC2D41DFE10066156B /* Exceptions for "serbDictionary" folder in "serbDictionary" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = BD543A5A2D35B03F00A4E217 /* serbDictionary */;
+		};
+		BDD7EA582D40A65800D00C6A /* Exceptions for "serbDictionary" folder in "SharedDictionary" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				dictionary.db,
@@ -168,7 +175,8 @@
 		BD543A5D2D35B03F00A4E217 /* serbDictionary */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				BD24AFAA2D3F405F00C03E0A /* Exceptions for "serbDictionary" folder in "SharedDictionary" target */,
+				BD372EEC2D41DFE10066156B /* Exceptions for "serbDictionary" folder in "serbDictionary" target */,
+				BDD7EA582D40A65800D00C6A /* Exceptions for "serbDictionary" folder in "SharedDictionary" target */,
 			);
 			path = serbDictionary;
 			sourceTree = "<group>";
@@ -915,6 +923,7 @@
 				DEVELOPMENT_TEAM = TJM87GLTM3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = serbDictionary/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -946,6 +955,7 @@
 				DEVELOPMENT_TEAM = TJM87GLTM3;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = serbDictionary/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

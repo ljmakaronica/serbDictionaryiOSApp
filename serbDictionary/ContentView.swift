@@ -2,7 +2,6 @@ import SwiftUI
 import SQLite3
 import SharedDictionary
 
-
 // MARK: - Custom Language Selector
 struct LanguageSelectorView: View {
     @Binding var isEnglishToSerbian: Bool
@@ -37,7 +36,6 @@ struct LanguageSelectorView: View {
         }
     }
 }
-
 
 // MARK: - Views
 struct WordOfTheDayCard: View {
@@ -163,38 +161,6 @@ struct WordListItemView: View {
     }
 }
 
-struct AlphabetBarView: View {
-    let isEnglishToSerbian: Bool
-    @Binding var selectedLetter: String
-    
-    private let serbianAlphabet = [
-        "А", "Б", "В", "Г", "Д", "Ђ", "Е", "Ж", "З", "И", "Ј", "К", "Л", "Љ", "М",
-        "Н", "Њ", "О", "П", "Р", "С", "Т", "Ћ", "У", "Ф", "Х", "Ц", "Ч", "Џ", "Ш"
-    ]
-    
-    private let englishAlphabet = [
-        "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
-        "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
-    ]
-    
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack {
-                ForEach(isEnglishToSerbian ? englishAlphabet : serbianAlphabet, id: \.self) { letter in
-                    Button(action: {
-                        selectedLetter = letter
-                    }) {
-                        Text(letter)
-                            .font(.headline)
-                            .foregroundColor(selectedLetter == letter ? .blue : .primary)
-                    }
-                    .padding(.horizontal, 4)
-                }
-            }
-        }
-    }
-}
-
 struct WordListView: View {
     let filteredWords: [DictionaryEntry]
     let isEnglishToSerbian: Bool
@@ -231,155 +197,226 @@ struct SearchBar: View {
     var body: some View {
         HStack {
             TextField("Претражи | Pretraži | Search", text: $text)
-                            .padding(8)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(8)
-                        if !text.isEmpty {
-                            Button(action: {
-                                text = ""
-                            }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                    }
+                .padding(8)
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
+            if !text.isEmpty {
+                Button(action: {
+                    text = ""
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.secondary)
                 }
             }
+        }
+    }
+}
 
-            struct ContentView: View {
-                @AppStorage("selectedSerbianLetter") private var selectedSerbianLetter: String = "А"
-                @AppStorage("selectedEnglishLetter") private var selectedEnglishLetter: String = "A"
-                @AppStorage("isEnglishToSerbian") private var isEnglishToSerbian: Bool = false
-                @AppStorage("showWordOfDay") private var showWordOfDay: Bool = true
-                
-                @State private var dictionary: [DictionaryEntry] = []
-                @State private var searchText: String = ""
-                @State private var selectedEntry: DictionaryEntry? = nil
-                @State private var starButtonRotation: Double = 0
-                
-                private var currentDictionary: [DictionaryEntry] {
-                    dictionary.sorted {
-                        isEnglishToSerbian ?
-                        $0.translation.english.word.localizedCaseInsensitiveCompare($1.translation.english.word) == .orderedAscending :
-                        $0.translation.cyrillic.word.localizedCaseInsensitiveCompare($1.translation.cyrillic.word) == .orderedAscending
-                    }
-                }
-                
-                private var wordOfTheDay: DictionaryEntry? {
-                    DictionaryEntry.wordOfTheDay(from: dictionary)
-                }
-                
-                private var selectedLetter: String {
-                    isEnglishToSerbian ? selectedEnglishLetter : selectedSerbianLetter
-                }
-                
-                private func setSelectedLetter(_ letter: String) {
-                    if isEnglishToSerbian {
-                        selectedEnglishLetter = letter
-                    } else {
-                        selectedSerbianLetter = letter
-                    }
-                }
-                
-                init() {
-                    _dictionary = State(initialValue: DatabaseManager.shared.loadEntries())
-                }
-                
-                private func filterWords() -> [DictionaryEntry] {
-                    if searchText.isEmpty {
-                        return currentDictionary.filter {
-                            let word = isEnglishToSerbian ?
-                                $0.translation.english.word :
-                                $0.translation.cyrillic.word
-                            return word.uppercased().hasPrefix(selectedLetter)
+class NotificationHandler: ObservableObject {
+    var onEntrySelected: ((DictionaryEntry) -> Void)?
+    
+    init() {
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("ShowWordDetail"),
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            if let entry = notification.userInfo?["entry"] as? DictionaryEntry {
+                self?.onEntrySelected?(entry)
+            }
+        }
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+}
+
+struct ContentView: View {
+    @AppStorage("selectedSerbianLetter") private var selectedSerbianLetter: String = "А"
+    @AppStorage("selectedEnglishLetter") private var selectedEnglishLetter: String = "A"
+    @AppStorage("isEnglishToSerbian") private var isEnglishToSerbian: Bool = false
+    @AppStorage("showWordOfDay") private var showWordOfDay: Bool = true
+    
+    @StateObject private var notificationHandler = NotificationHandler()
+    @State private var dictionary: [DictionaryEntry] = []
+    @State private var searchText: String = ""
+    @State private var selectedEntry: DictionaryEntry? = nil
+    @State private var starButtonRotation: Double = 0
+    
+    private var currentDictionary: [DictionaryEntry] {
+        dictionary.sorted {
+            isEnglishToSerbian ?
+            $0.translation.english.word.localizedCaseInsensitiveCompare($1.translation.english.word) == .orderedAscending :
+            $0.translation.cyrillic.word.localizedCaseInsensitiveCompare($1.translation.cyrillic.word) == .orderedAscending
+        }
+    }
+    
+    private var wordOfTheDay: DictionaryEntry? {
+        DictionaryEntry.wordOfTheDay(from: dictionary)
+    }
+    
+    private var selectedLetter: String {
+        isEnglishToSerbian ? selectedEnglishLetter : selectedSerbianLetter
+    }
+    
+    private func setSelectedLetter(_ letter: String) {
+        if isEnglishToSerbian {
+            selectedEnglishLetter = letter
+        } else {
+            selectedSerbianLetter = letter
+        }
+    }
+    
+    init() {
+        _dictionary = State(initialValue: DatabaseManager.shared.loadEntries())
+    }
+    
+    private func filterWords() -> [DictionaryEntry] {
+        if searchText.isEmpty {
+            return currentDictionary.filter {
+                let word = isEnglishToSerbian ?
+                    $0.translation.english.word :
+                    $0.translation.cyrillic.word
+                return word.uppercased().hasPrefix(selectedLetter)
+            }
+        } else {
+            return currentDictionary.filter {
+                $0.translation.english.word.localizedCaseInsensitiveContains(searchText) ||
+                $0.translation.cyrillic.word.localizedCaseInsensitiveContains(searchText) ||
+                $0.translation.latin.word.localizedCaseInsensitiveContains(searchText)
+            }
+        }
+    }
+    struct AlphabetBarView: View {
+        let isEnglishToSerbian: Bool
+        @Binding var selectedLetter: String
+        
+        private let serbianAlphabet = [
+            "А", "Б", "В", "Г", "Д", "Ђ", "Е", "Ж", "З", "И", "Ј", "К", "Л", "Љ", "М",
+            "Н", "Њ", "О", "П", "Р", "С", "Т", "Ћ", "У", "Ф", "Х", "Ц", "Ч", "Џ", "Ш"
+        ]
+        
+        private let englishAlphabet = [
+            "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+            "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
+        ]
+        
+        var body: some View {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(isEnglishToSerbian ? englishAlphabet : serbianAlphabet, id: \.self) { letter in
+                        Button(action: {
+                            selectedLetter = letter
+                        }) {
+                            Text(letter)
+                                .font(.headline)
+                                .foregroundColor(selectedLetter == letter ? .blue : .primary)
                         }
-                    } else {
-                        return currentDictionary.filter {
-                            $0.translation.english.word.localizedCaseInsensitiveContains(searchText) ||
-                            $0.translation.cyrillic.word.localizedCaseInsensitiveContains(searchText) ||
-                            $0.translation.latin.word.localizedCaseInsensitiveContains(searchText)
-                        }
+                        .padding(.horizontal, 4)
                     }
                 }
+                .padding(.horizontal)
+            }
+        }
+    }
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 16) {
+                SearchBar(text: $searchText)
+                    .padding(.horizontal)
                 
-                var body: some View {
-                    NavigationView {
-                        VStack(spacing: 16) {
-                            SearchBar(text: $searchText)
-                                .padding(.horizontal)
-                            
-                            if let wordOfDay = wordOfTheDay, showWordOfDay {
-                                WordOfTheDayCard(
-                                    entry: wordOfDay,
-                                    isEnglishToSerbian: isEnglishToSerbian,
-                                    onDismiss: {
-                                        withAnimation {
-                                            showWordOfDay = false
-                                        }
-                                    },
-                                    onTap: { selectedEntry = wordOfDay }
-                                )
-                                .padding(.horizontal)
-                                .transition(.asymmetric(
-                                    insertion: .scale(scale: 0.8).combined(with: .opacity),
-                                    removal: .scale(scale: 1.1).combined(with: .opacity)
-                                ))
+                if let wordOfDay = wordOfTheDay, showWordOfDay {
+                    WordOfTheDayCard(
+                        entry: wordOfDay,
+                        isEnglishToSerbian: isEnglishToSerbian,
+                        onDismiss: {
+                            withAnimation {
+                                showWordOfDay = false
                             }
-                            
-                            WordListView(
-                                filteredWords: filterWords(),
-                                isEnglishToSerbian: isEnglishToSerbian,
-                                selectedEntry: $selectedEntry
+                        },
+                        onTap: { selectedEntry = wordOfDay }
+                    )
+                    .padding(.horizontal)
+                    .transition(.asymmetric(
+                        insertion: .scale(scale: 0.8).combined(with: .opacity),
+                        removal: .scale(scale: 1.1).combined(with: .opacity)
+                    ))
+                }
+                
+                WordListView(
+                    filteredWords: filterWords(),
+                    isEnglishToSerbian: isEnglishToSerbian,
+                    selectedEntry: $selectedEntry
+                )
+            }
+            .animation(.easeInOut(duration: 0.3), value: showWordOfDay)
+            .navigationTitle(isEnglishToSerbian ? "English-Serbian" : "Српски-Енглески")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    if !showWordOfDay {
+                        Button(action: {
+                            withAnimation {
+                                starButtonRotation += 360
+                                showWordOfDay = true
+                            }
+                        }) {
+                            Image(systemName: "text.badge.star")
+                                .font(.system(size: 22))
+                                .rotationEffect(.degrees(starButtonRotation))
+                                .animation(.easeInOut(duration: 0.3), value: starButtonRotation)
+                        }
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    LanguageSelectorView(isEnglishToSerbian: $isEnglishToSerbian)
+                }
+                
+                ToolbarItem(placement: .bottomBar) {
+                    AlphabetBarView(
+                        isEnglishToSerbian: isEnglishToSerbian,
+                        selectedLetter: Binding(
+                            get: { selectedLetter },
+                            set: { setSelectedLetter($0) }
+                        )
+                    )
+                }
+            }
+            .sheet(item: $selectedEntry) { entry in
+                NavigationView {
+                    WordDetailView(entry: entry, isEnglishToSerbian: isEnglishToSerbian)
+                }
+            }
+        }
+        .navigationViewStyle(StackNavigationViewStyle())
+        .onAppear {
+            // Set up notification observation for deep linking
+            notificationHandler.onEntrySelected = { entry in
+                selectedEntry = entry
+            }
+        }
+    }
+}
+
+@main
+struct DictionaryApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .onOpenURL { url in
+                    if let host = url.host, host == "word",
+                       let idString = url.pathComponents.dropFirst().first,
+                       let id = Int64(idString) {
+                        if let entry = DatabaseManager.shared.loadEntries().first(where: { $0.id == id }) {
+                            NotificationCenter.default.post(
+                                name: NSNotification.Name("ShowWordDetail"),
+                                object: nil,
+                                userInfo: ["entry": entry]
                             )
                         }
-                        .animation(.easeInOut(duration: 0.3), value: showWordOfDay)
-                        .navigationTitle(isEnglishToSerbian ? "English-Serbian" : "Српски-Енглески")
-                        .toolbar {
-                            ToolbarItem(placement: .navigationBarLeading) {
-                                if !showWordOfDay {
-                                    Button(action: {
-                                        withAnimation {
-                                            starButtonRotation += 360
-                                            showWordOfDay = true
-                                        }
-                                    }) {
-                                        Image(systemName: "text.badge.star")
-                                            .font(.system(size: 22))
-                                            .rotationEffect(.degrees(starButtonRotation))
-                                            .animation(.easeInOut(duration: 0.3), value: starButtonRotation)
-                                    }
-                                }
-                            }
-                            
-                            ToolbarItem(placement: .navigationBarTrailing) {
-                                LanguageSelectorView(isEnglishToSerbian: $isEnglishToSerbian)
-                            }
-                            
-                            ToolbarItem(placement: .bottomBar) {
-                                AlphabetBarView(
-                                    isEnglishToSerbian: isEnglishToSerbian,
-                                    selectedLetter: Binding(
-                                        get: { selectedLetter },
-                                        set: { setSelectedLetter($0) }
-                                    )
-                                )
-                            }
-                        }
-                        .sheet(item: $selectedEntry) { entry in
-                            NavigationView {
-                                WordDetailView(entry: entry, isEnglishToSerbian: isEnglishToSerbian)
-                            }
-                        }
-                    }
-                    .navigationViewStyle(StackNavigationViewStyle())
-                }
-            }
-
-            @main
-            struct DictionaryApp: App {
-                var body: some Scene {
-                    WindowGroup {
-                        ContentView()
                     }
                 }
-            }
+        }
+    }
+}
