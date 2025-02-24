@@ -6,9 +6,9 @@ A modern iOS dictionary application that helps users translate between Serbian (
 <p align="center">
   <img src="https://github.com/user-attachments/assets/93028b7a-18e3-4d3c-b869-90be806e7a37" width="199" />
   <img src="https://github.com/user-attachments/assets/880e563c-1676-403d-98ad-c2c5e25429cb" width="199" />
+  <img src="https://github.com/user-attachments/assets/c93347fc-b36b-4b32-bd98-293daa908e32" width="199" />
   <img src="https://github.com/user-attachments/assets/943f14ca-f242-49f4-b128-bc92d2fe4a56" width="199" />
   <img src="https://github.com/user-attachments/assets/c7fbd0ac-89c4-4a0f-877f-5e0b8f142053" width="199" />
-  <img src="https://github.com/user-attachments/assets/c93347fc-b36b-4b32-bd98-293daa908e32" width="199" />
 </p>
 
 
