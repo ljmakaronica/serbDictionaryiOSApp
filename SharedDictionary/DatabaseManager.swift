@@ -17,31 +17,41 @@ public class DatabaseManager {
             // Check if database exists in container
             if FileManager.default.fileExists(atPath: dbPath) {
                 if sqlite3_open(dbPath, &db) == SQLITE_OK {
+                    #if DEBUG
                     print("Successfully opened database from app group container")
+                    #endif
                     return
                 }
             }
-            
+
             // If not in container, copy from main bundle
             if let bundleDBPath = Bundle.main.path(forResource: "dictionary", ofType: "db") {
                 do {
                     try FileManager.default.copyItem(atPath: bundleDBPath, toPath: dbPath)
                     if sqlite3_open(dbPath, &db) == SQLITE_OK {
+                        #if DEBUG
                         print("Successfully copied and opened database in app group container")
+                        #endif
                         return
                     }
                 } catch {
+                    #if DEBUG
                     print("Error copying database to container: \(error)")
+                    #endif
                 }
             }
         }
-        
+
         // Fallback to bundle database if app group access fails
         if let bundleDBPath = Bundle.main.path(forResource: "dictionary", ofType: "db") {
             if sqlite3_open(bundleDBPath, &db) == SQLITE_OK {
+                #if DEBUG
                 print("Successfully opened database from bundle")
+                #endif
             } else {
+                #if DEBUG
                 print("Error opening database")
+                #endif
                 db = nil
             }
         }
@@ -59,29 +69,39 @@ public class DatabaseManager {
         """
         
         var statement: OpaquePointer?
-        
+
         guard sqlite3_prepare_v2(db, queryString, -1, &statement, nil) == SQLITE_OK else {
+            #if DEBUG
             print("Error preparing statement")
+            #endif
             return []
+        }
+        
+        // Helper function to safely extract strings
+        func safeString(from statement: OpaquePointer?, column: Int32) -> String {
+            guard let cString = sqlite3_column_text(statement, column) else {
+                return ""
+            }
+            return String(cString: cString)
         }
         
         while sqlite3_step(statement) == SQLITE_ROW {
             let id = sqlite3_column_int64(statement, 0)
             
-            let cyrillicWord = String(cString: sqlite3_column_text(statement, 1))
-            let cyrillicPart = String(cString: sqlite3_column_text(statement, 2))
-            let cyrillicDef = String(cString: sqlite3_column_text(statement, 3))
-            let cyrillicExample = String(cString: sqlite3_column_text(statement, 4))
+            let cyrillicWord = safeString(from: statement, column: 1)
+            let cyrillicPart = safeString(from: statement, column: 2)
+            let cyrillicDef = safeString(from: statement, column: 3)
+            let cyrillicExample = safeString(from: statement, column: 4)
             
-            let latinWord = String(cString: sqlite3_column_text(statement, 5))
-            let latinPart = String(cString: sqlite3_column_text(statement, 6))
-            let latinDef = String(cString: sqlite3_column_text(statement, 7))
-            let latinExample = String(cString: sqlite3_column_text(statement, 8))
+            let latinWord = safeString(from: statement, column: 5)
+            let latinPart = safeString(from: statement, column: 6)
+            let latinDef = safeString(from: statement, column: 7)
+            let latinExample = safeString(from: statement, column: 8)
             
-            let englishWord = String(cString: sqlite3_column_text(statement, 9))
-            let englishPart = String(cString: sqlite3_column_text(statement, 10))
-            let englishDef = String(cString: sqlite3_column_text(statement, 11))
-            let englishExample = String(cString: sqlite3_column_text(statement, 12))
+            let englishWord = safeString(from: statement, column: 9)
+            let englishPart = safeString(from: statement, column: 10)
+            let englishDef = safeString(from: statement, column: 11)
+            let englishExample = safeString(from: statement, column: 12)
             
             let entry = DictionaryEntry(
                 id: id,

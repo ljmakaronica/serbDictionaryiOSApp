@@ -10,7 +10,7 @@ struct WordDetailView: View {
         ZStack {
             Color(.systemGroupedBackground)
                 .ignoresSafeArea()
-            
+
             ScrollView {
                 VStack(spacing: 0) {
                     // Header with close button
@@ -24,8 +24,7 @@ struct WordDetailView: View {
                                 .padding(.top, 8)
                         }
                     }
-                    
-                    // Main content
+
                     VStack(spacing: 24) {
                         if isEnglishToSerbian {
                             englishCard
@@ -36,6 +35,18 @@ struct WordDetailView: View {
                             divider
                             englishCard
                         }
+
+                        Button(action: {
+                            openGoogleForm(for: entry)
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "exclamationmark.bubble")
+                                Text(isEnglishToSerbian ? "Report Inaccuracy" : "Prijavi grešku")
+                            }
+                            .foregroundColor(.blue)
+                            .font(.system(size: 15, weight: .medium))
+                        }
+                        .padding(.top, 24)
                     }
                     .padding(20)
                 }
@@ -47,6 +58,24 @@ struct WordDetailView: View {
             withAnimation(.easeOut(duration: 0.3)) {
                 appear = true
             }
+        }
+    }
+    
+    func openGoogleForm(for entry: DictionaryEntry) {
+        let englishWord = entry.translation.english.word
+        let cyrillicWord = entry.translation.cyrillic.word
+        let latinWord = entry.translation.latin.word
+        
+        let combinedWords = "\(englishWord) | \(latinWord) | \(cyrillicWord)"
+        
+        let encodedWords = combinedWords.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        
+        let baseURL = "https://docs.google.com/forms/d/e/1FAIpQLSdyreBT6WKa3szYCExehtf3VR9Qk7idpi4ISbgnWJZkgVLiUw/viewform"
+        
+        let urlString = "\(baseURL)?usp=pp_url&entry.1466278060=\(encodedWords)"
+        
+        if let url = URL(string: urlString) {
+            UIApplication.shared.open(url)
         }
     }
     
@@ -202,7 +231,7 @@ struct WordCard: View {
                     .font(.system(size: 18, weight: .medium))
                     .foregroundColor(.secondary)
             }
-            
+
             // Script switcher (Serbian only)
             if case .serbian = language {
                 HStack(spacing: 0) {
@@ -216,7 +245,7 @@ struct WordCard: View {
                                 Text(script.title)
                                     .font(.system(size: 16, weight: .medium))
                                     .foregroundColor(selectedScript == script ? .primary : .secondary)
-                                
+
                                 Rectangle()
                                     .fill(selectedScript == script ? Color.blue : Color.clear)
                                     .frame(height: 2)
@@ -226,12 +255,12 @@ struct WordCard: View {
                     }
                 }
             }
-            
+
             // Word
             Text(currentWord)
                 .font(.system(size: 32, weight: .bold))
                 .foregroundColor(.primary)
-            
+
             // Part of Speech
             Text(currentPartOfSpeech)
                 .font(.system(size: 15))
@@ -242,19 +271,19 @@ struct WordCard: View {
                     Capsule()
                         .fill(Color.partOfSpeechColors.colorForPartOfSpeech(currentPartOfSpeech))
                 )
-            
+
             // Definition
             VStack(alignment: .leading, spacing: 4) {
-                Text(language.definitionLabel)
+                Text(language == .english ? language.definitionLabel : (selectedScript == .cyrillic ? "Дефиниција:" : "Definicija:"))
                     .font(.system(size: 15, weight: .semibold))
                 Text(currentDefinition)
                     .font(.system(size: 15))
                     .foregroundColor(.secondary)
             }
-            
+
             // Example
             VStack(alignment: .leading, spacing: 4) {
-                Text(language.exampleLabel)
+                Text(language == .english ? language.exampleLabel : (selectedScript == .cyrillic ? "Пример:" : "Primer:"))
                     .font(.system(size: 15, weight: .semibold))
                 Text(currentExample)
                     .font(.system(size: 15))

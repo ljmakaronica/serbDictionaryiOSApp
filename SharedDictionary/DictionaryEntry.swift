@@ -110,7 +110,7 @@ public struct DictionaryEntry: Identifiable {
        
        // Get current day of year
        var calendar = Calendar(identifier: .gregorian)
-       calendar.timeZone = TimeZone(identifier: "UTC")!
+       calendar.timeZone = TimeZone(identifier: "America/New_York")!
        let dayOfYear = calendar.ordinality(of: .day, in: .year, for: Date()) ?? 1
        
        // Use the day to look up in our predetermined list

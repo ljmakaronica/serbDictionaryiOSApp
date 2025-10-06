@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		BD24AF542D3F1EF100C03E0A /* SQLite in Frameworks */ = {isa = PBXBuildFile; productRef = BD24AF532D3F1EF100C03E0A /* SQLite */; };
 		BD24AF5C2D3F3A2300C03E0A /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD24AF5B2D3F3A2300C03E0A /* WidgetKit.framework */; };
 		BD24AF5E2D3F3A2300C03E0A /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD24AF5D2D3F3A2300C03E0A /* SwiftUI.framework */; };
 		BD24AF6D2D3F3A2700C03E0A /* WordOfTheDay WidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BD24AF592D3F3A2300C03E0A /* WordOfTheDay WidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -16,7 +15,6 @@
 		BD24AF8E2D3F3A7100C03E0A /* SharedDictionary.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BD24AF782D3F3A7000C03E0A /* SharedDictionary.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		BD24AFA22D3F3EED00C03E0A /* SharedDictionary.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD24AF782D3F3A7000C03E0A /* SharedDictionary.framework */; };
 		BD24AFA32D3F3EED00C03E0A /* SharedDictionary.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BD24AF782D3F3A7000C03E0A /* SharedDictionary.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		BD24AFA82D3F3F8D00C03E0A /* SQLite in Frameworks */ = {isa = PBXBuildFile; productRef = BD24AFA72D3F3F8D00C03E0A /* SQLite */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -141,13 +139,6 @@
 			);
 			target = BD543A5A2D35B03F00A4E217 /* serbDictionary */;
 		};
-		BDD7EA582D40A65800D00C6A /* Exceptions for "serbDictionary" folder in "SharedDictionary" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				dictionary.db,
-			);
-			target = BD24AF772D3F3A7000C03E0A /* SharedDictionary */;
-		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -176,7 +167,6 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				BD372EEC2D41DFE10066156B /* Exceptions for "serbDictionary" folder in "serbDictionary" target */,
-				BDD7EA582D40A65800D00C6A /* Exceptions for "serbDictionary" folder in "SharedDictionary" target */,
 			);
 			path = serbDictionary;
 			sourceTree = "<group>";
@@ -198,7 +188,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BD24AFA82D3F3F8D00C03E0A /* SQLite in Frameworks */,
 				BD24AF5E2D3F3A2300C03E0A /* SwiftUI.framework in Frameworks */,
 				BD24AFA22D3F3EED00C03E0A /* SharedDictionary.framework in Frameworks */,
 				BD24AF5C2D3F3A2300C03E0A /* WidgetKit.framework in Frameworks */,
@@ -224,7 +213,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BD24AF542D3F1EF100C03E0A /* SQLite in Frameworks */,
 				BD24AF8D2D3F3A7100C03E0A /* SharedDictionary.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -315,7 +303,6 @@
 			);
 			name = "WordOfTheDay WidgetExtension";
 			packageProductDependencies = (
-				BD24AFA72D3F3F8D00C03E0A /* SQLite */,
 			);
 			productName = "WordOfTheDay WidgetExtension";
 			productReference = BD24AF592D3F3A2300C03E0A /* WordOfTheDay WidgetExtension.appex */;
@@ -389,7 +376,6 @@
 			);
 			name = serbDictionary;
 			packageProductDependencies = (
-				BD24AF532D3F1EF100C03E0A /* SQLite */,
 			);
 			productName = serbDictionary;
 			productReference = BD543A5B2D35B03F00A4E217 /* serbDictionary.app */;
@@ -484,7 +470,6 @@
 			mainGroup = BD543A522D35B03F00A4E217;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				BD24AF522D3F1EF100C03E0A /* XCRemoteSwiftPackageReference "SQLite" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = BD543A5C2D35B03F00A4E217 /* Products */;
@@ -1114,30 +1099,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		BD24AF522D3F1EF100C03E0A /* XCRemoteSwiftPackageReference "SQLite" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/stephencelis/SQLite.swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.15.3;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		BD24AF532D3F1EF100C03E0A /* SQLite */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = BD24AF522D3F1EF100C03E0A /* XCRemoteSwiftPackageReference "SQLite" */;
-			productName = SQLite;
-		};
-		BD24AFA72D3F3F8D00C03E0A /* SQLite */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = BD24AF522D3F1EF100C03E0A /* XCRemoteSwiftPackageReference "SQLite" */;
-			productName = SQLite;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = BD543A532D35B03F00A4E217 /* Project object */;
 }

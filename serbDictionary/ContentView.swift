@@ -1,10 +1,10 @@
 import SwiftUI
-import SQLite3
 import SharedDictionary
 
 // MARK: - Custom Language Selector
 struct LanguageSelectorView: View {
     @Binding var isEnglishToSerbian: Bool
+    private let haptic = UIImpactFeedbackGenerator(style: .light)
     
     var body: some View {
         ZStack {
@@ -30,6 +30,7 @@ struct LanguageSelectorView: View {
             }
         }
         .onTapGesture {
+            haptic.impactOccurred()
             withAnimation {
                 isEnglishToSerbian.toggle()
             }
@@ -185,6 +186,16 @@ struct WordListView: View {
                     .buttonStyle(PlainButtonStyle())
                 }
                 .listStyle(PlainListStyle())
+                .simultaneousGesture(
+                    DragGesture().onChanged { _ in
+                        UIApplication.shared.sendAction(
+                            #selector(UIResponder.resignFirstResponder),
+                            to: nil,
+                            from: nil,
+                            for: nil
+                        )
+                    }
+                )
             }
         }
         .background(Color(.systemBackground))
@@ -200,9 +211,24 @@ struct SearchBar: View {
                 .padding(8)
                 .background(Color(.systemGray6))
                 .cornerRadius(8)
+                .submitLabel(.done)
+                .onSubmit {
+                    UIApplication.shared.sendAction(
+                        #selector(UIResponder.resignFirstResponder),
+                        to: nil,
+                        from: nil,
+                        for: nil
+                    )
+                }
             if !text.isEmpty {
                 Button(action: {
                     text = ""
+                    UIApplication.shared.sendAction(
+                        #selector(UIResponder.resignFirstResponder),
+                        to: nil,
+                        from: nil,
+                        for: nil
+                    )
                 }) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(.secondary)
@@ -288,9 +314,11 @@ struct ContentView: View {
             }
         }
     }
+    
     struct AlphabetBarView: View {
         let isEnglishToSerbian: Bool
         @Binding var selectedLetter: String
+        private let haptic = UIImpactFeedbackGenerator(style: .light)
         
         private let serbianAlphabet = [
             "А", "Б", "В", "Г", "Д", "Ђ", "Е", "Ж", "З", "И", "Ј", "К", "Л", "Љ", "М",
@@ -307,6 +335,7 @@ struct ContentView: View {
                 HStack(spacing: 12) {
                     ForEach(isEnglishToSerbian ? englishAlphabet : serbianAlphabet, id: \.self) { letter in
                         Button(action: {
+                            haptic.impactOccurred()
                             selectedLetter = letter
                         }) {
                             Text(letter)
@@ -320,6 +349,7 @@ struct ContentView: View {
             }
         }
     }
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 16) {
@@ -361,7 +391,7 @@ struct ContentView: View {
                                 showWordOfDay = true
                             }
                         }) {
-                            Image(systemName: "text.badge.star")
+                            Image(systemName: "calendar.badge.clock")
                                 .font(.system(size: 22))
                                 .rotationEffect(.degrees(starButtonRotation))
                                 .animation(.easeInOut(duration: 0.3), value: starButtonRotation)
@@ -405,16 +435,21 @@ struct DictionaryApp: App {
         WindowGroup {
             ContentView()
                 .onOpenURL { url in
-                    if let host = url.host, host == "word",
-                       let idString = url.pathComponents.dropFirst().first,
-                       let id = Int64(idString) {
-                        if let entry = DatabaseManager.shared.loadEntries().first(where: { $0.id == id }) {
-                            NotificationCenter.default.post(
-                                name: NSNotification.Name("ShowWordDetail"),
-                                object: nil,
-                                userInfo: ["entry": entry]
-                            )
-                        }
+                    guard url.scheme == "serbdictionary",
+                          let host = url.host,
+                          host == "word",
+                          let idString = url.pathComponents.dropFirst().first,
+                          let id = Int64(idString),
+                          id > 0 else {
+                        return
+                    }
+
+                    if let entry = DatabaseManager.shared.loadEntries().first(where: { $0.id == id }) {
+                        NotificationCenter.default.post(
+                            name: NSNotification.Name("ShowWordDetail"),
+                            object: nil,
+                            userInfo: ["entry": entry]
+                        )
                     }
                 }
         }

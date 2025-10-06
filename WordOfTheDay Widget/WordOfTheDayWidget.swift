@@ -4,30 +4,58 @@ import SharedDictionary
 
 struct WordOfDayWidget: View {
     let entry: DictionaryEntry
-    
+
     var body: some View {
-        Link(destination: URL(string: "serbiandict://word/\(entry.id)")!) {
-            VStack {
-                VStack(alignment: .leading) {
-                    // Cyrillic
+        if let url = URL(string: "serbdictionary://word/\(entry.id)") {
+            Link(destination: url) {
+                widgetContent
+            }
+        } else {
+            widgetContent
+        }
+    }
+
+    private var widgetContent: some View {
+        Group {
+            VStack(alignment: .leading, spacing: 0) {
+                // Word container
+                VStack(alignment: .leading, spacing: 2) {
+                    // Cyrillic - resize to fit
                     Text(entry.translation.cyrillic.word)
-                        .font(.system(size: 24, weight: .bold))
-                    Spacer().frame(height: 2)
-                    // Latin
+                        .font(.system(size: 24))
+                        .fontWeight(.bold)
+                        .minimumScaleFactor(0.4)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    // Latin - smaller and secondary
                     Text(entry.translation.latin.word)
                         .font(.system(size: 14))
-                        .foregroundColor(.secondary)
-                    Spacer().frame(height: 12)
-                    // English
-                    Text(entry.translation.english.word)
-                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .minimumScaleFactor(0.4)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
+                
+                Spacer(minLength: 6)
+                
+                // Translation container
+                VStack(alignment: .leading, spacing: 2) {
+                    // English translation
+                    Text(entry.translation.english.word)
+                        .font(.system(size: 24))
+                        .fontWeight(.bold)
+                        .minimumScaleFactor(0.4)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            .containerBackground(for: .widget) {
+                Color(uiColor: .systemBackground)
             }
         }
     }
-}
+    }
+
 
 struct Provider: TimelineProvider {
     func placeholder(in context: Context) -> SimpleEntry {
@@ -87,7 +115,7 @@ struct SimpleEntry: TimelineEntry {
 struct SerbianDictionaryWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(
-            kind: "com.yourdomain.wordofday",
+            kind: "com.Marko.serbDictionary.wordofday",
             provider: Provider()
         ) { entry in
             WordOfDayWidget(entry: entry.entry)
