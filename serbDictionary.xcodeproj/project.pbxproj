@@ -14,7 +14,6 @@
 		BD24AF8D2D3F3A7100C03E0A /* SharedDictionary.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD24AF782D3F3A7000C03E0A /* SharedDictionary.framework */; };
 		BD24AF8E2D3F3A7100C03E0A /* SharedDictionary.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BD24AF782D3F3A7000C03E0A /* SharedDictionary.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		BD24AFA22D3F3EED00C03E0A /* SharedDictionary.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BD24AF782D3F3A7000C03E0A /* SharedDictionary.framework */; };
-		BD24AFA32D3F3EED00C03E0A /* SharedDictionary.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BD24AF782D3F3A7000C03E0A /* SharedDictionary.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -98,7 +97,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				BD24AFA32D3F3EED00C03E0A /* SharedDictionary.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;

@@ -165,11 +165,18 @@ struct WordListItemView: View {
 struct WordListView: View {
     let filteredWords: [DictionaryEntry]
     let isEnglishToSerbian: Bool
+    let isLoading: Bool
     @Binding var selectedEntry: DictionaryEntry?
-    
+
     var body: some View {
         Group {
-            if filteredWords.isEmpty {
+            if isLoading {
+                // Show skeleton loaders while loading
+                List(0..<8, id: \.self) { _ in
+                    WordListItemSkeleton(isEnglishToSerbian: isEnglishToSerbian)
+                }
+                .listStyle(PlainListStyle())
+            } else if filteredWords.isEmpty {
                 VStack {
                     Spacer()
                     Text("No results found")
@@ -269,7 +276,9 @@ struct ContentView: View {
     @State private var searchText: String = ""
     @State private var selectedEntry: DictionaryEntry? = nil
     @State private var starButtonRotation: Double = 0
-    
+
+    @State private var isLoading = true
+
     private var currentDictionary: [DictionaryEntry] {
         dictionary.sorted {
             isEnglishToSerbian ?
@@ -277,7 +286,7 @@ struct ContentView: View {
             $0.translation.cyrillic.word.localizedCaseInsensitiveCompare($1.translation.cyrillic.word) == .orderedAscending
         }
     }
-    
+
     private var wordOfTheDay: DictionaryEntry? {
         DictionaryEntry.wordOfTheDay(from: dictionary)
     }
@@ -293,11 +302,7 @@ struct ContentView: View {
             selectedSerbianLetter = letter
         }
     }
-    
-    init() {
-        _dictionary = State(initialValue: DatabaseManager.shared.loadEntries())
-    }
-    
+
     private func filterWords() -> [DictionaryEntry] {
         if searchText.isEmpty {
             return currentDictionary.filter {
@@ -311,6 +316,19 @@ struct ContentView: View {
                 $0.translation.english.word.localizedCaseInsensitiveContains(searchText) ||
                 $0.translation.cyrillic.word.localizedCaseInsensitiveContains(searchText) ||
                 $0.translation.latin.word.localizedCaseInsensitiveContains(searchText)
+            }
+        }
+    }
+
+    private func loadDictionary() {
+        Task {
+            let entries = await Task.detached {
+                DatabaseManager.shared.loadEntries()
+            }.value
+
+            await MainActor.run {
+                dictionary = entries
+                isLoading = false
             }
         }
     }
@@ -355,28 +373,35 @@ struct ContentView: View {
             VStack(spacing: 16) {
                 SearchBar(text: $searchText)
                     .padding(.horizontal)
-                
-                if let wordOfDay = wordOfTheDay, showWordOfDay {
-                    WordOfTheDayCard(
-                        entry: wordOfDay,
-                        isEnglishToSerbian: isEnglishToSerbian,
-                        onDismiss: {
-                            withAnimation {
-                                showWordOfDay = false
-                            }
-                        },
-                        onTap: { selectedEntry = wordOfDay }
-                    )
-                    .padding(.horizontal)
-                    .transition(.asymmetric(
-                        insertion: .scale(scale: 0.8).combined(with: .opacity),
-                        removal: .scale(scale: 1.1).combined(with: .opacity)
-                    ))
+
+                // Word of the Day Card - Show skeleton while loading
+                if showWordOfDay {
+                    if isLoading {
+                        WordOfTheDayCardSkeleton(isEnglishToSerbian: isEnglishToSerbian)
+                            .padding(.horizontal)
+                    } else if let wordOfDay = wordOfTheDay {
+                        WordOfTheDayCard(
+                            entry: wordOfDay,
+                            isEnglishToSerbian: isEnglishToSerbian,
+                            onDismiss: {
+                                withAnimation {
+                                    showWordOfDay = false
+                                }
+                            },
+                            onTap: { selectedEntry = wordOfDay }
+                        )
+                        .padding(.horizontal)
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.8).combined(with: .opacity),
+                            removal: .scale(scale: 1.1).combined(with: .opacity)
+                        ))
+                    }
                 }
-                
+
                 WordListView(
                     filteredWords: filterWords(),
                     isEnglishToSerbian: isEnglishToSerbian,
+                    isLoading: isLoading,
                     selectedEntry: $selectedEntry
                 )
             }
@@ -398,11 +423,11 @@ struct ContentView: View {
                         }
                     }
                 }
-                
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     LanguageSelectorView(isEnglishToSerbian: $isEnglishToSerbian)
                 }
-                
+
                 ToolbarItem(placement: .bottomBar) {
                     AlphabetBarView(
                         isEnglishToSerbian: isEnglishToSerbian,
@@ -421,7 +446,7 @@ struct ContentView: View {
         }
         .navigationViewStyle(StackNavigationViewStyle())
         .onAppear {
-            // Set up notification observation for deep linking
+            loadDictionary()
             notificationHandler.onEntrySelected = { entry in
                 selectedEntry = entry
             }
@@ -455,3 +480,4 @@ struct DictionaryApp: App {
         }
     }
 }
+

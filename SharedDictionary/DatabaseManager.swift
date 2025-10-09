@@ -57,9 +57,128 @@ public class DatabaseManager {
         }
     }
     
+    // Helper function to safely extract strings
+    private func safeString(from statement: OpaquePointer?, column: Int32) -> String {
+        guard let cString = sqlite3_column_text(statement, column) else {
+            return ""
+        }
+        return String(cString: cString)
+    }
+
+    // Helper function to create entry from statement row
+    private func createEntry(from statement: OpaquePointer?) -> DictionaryEntry? {
+        let id = sqlite3_column_int64(statement, 0)
+
+        let cyrillicWord = safeString(from: statement, column: 1)
+        let cyrillicPart = safeString(from: statement, column: 2)
+        let cyrillicDef = safeString(from: statement, column: 3)
+        let cyrillicExample = safeString(from: statement, column: 4)
+
+        let latinWord = safeString(from: statement, column: 5)
+        let latinPart = safeString(from: statement, column: 6)
+        let latinDef = safeString(from: statement, column: 7)
+        let latinExample = safeString(from: statement, column: 8)
+
+        let englishWord = safeString(from: statement, column: 9)
+        let englishPart = safeString(from: statement, column: 10)
+        let englishDef = safeString(from: statement, column: 11)
+        let englishExample = safeString(from: statement, column: 12)
+
+        return DictionaryEntry(
+            id: id,
+            translation: .init(
+                cyrillic: .init(
+                    word: cyrillicWord,
+                    part_of_speech: cyrillicPart,
+                    definition: cyrillicDef,
+                    example_sentence: cyrillicExample
+                ),
+                latin: .init(
+                    word: latinWord,
+                    part_of_speech: latinPart,
+                    definition: latinDef,
+                    example_sentence: latinExample
+                ),
+                english: .init(
+                    word: englishWord,
+                    part_of_speech: englishPart,
+                    definition: englishDef,
+                    example_sentence: englishExample
+                )
+            )
+        )
+    }
+
+    // Load entries starting with a specific letter (for progressive loading)
+    public func loadEntries(startingWith letter: String, isEnglish: Bool) -> [DictionaryEntry] {
+        var entries: [DictionaryEntry] = []
+
+        let columnName = isEnglish ? "english_word" : "cyrillic_word"
+        let queryString = """
+            SELECT id,
+                   cyrillic_word, cyrillic_part, cyrillic_def, cyrillic_example,
+                   latin_word, latin_part, latin_def, latin_example,
+                   english_word, english_part, english_def, english_example
+            FROM words
+            WHERE UPPER(\(columnName)) LIKE ?
+        """
+
+        var statement: OpaquePointer?
+
+        guard sqlite3_prepare_v2(db, queryString, -1, &statement, nil) == SQLITE_OK else {
+            #if DEBUG
+            print("Error preparing statement for letter filter")
+            #endif
+            return []
+        }
+
+        let pattern = "\(letter.uppercased())%"
+        sqlite3_bind_text(statement, 1, (pattern as NSString).utf8String, -1, nil)
+
+        while sqlite3_step(statement) == SQLITE_ROW {
+            if let entry = createEntry(from: statement) {
+                entries.append(entry)
+            }
+        }
+
+        sqlite3_finalize(statement)
+        return entries
+    }
+
+    // Load a specific entry by ID (for Word of the Day)
+    public func loadEntry(byId id: Int64) -> DictionaryEntry? {
+        let queryString = """
+            SELECT id,
+                   cyrillic_word, cyrillic_part, cyrillic_def, cyrillic_example,
+                   latin_word, latin_part, latin_def, latin_example,
+                   english_word, english_part, english_def, english_example
+            FROM words
+            WHERE id = ?
+        """
+
+        var statement: OpaquePointer?
+
+        guard sqlite3_prepare_v2(db, queryString, -1, &statement, nil) == SQLITE_OK else {
+            #if DEBUG
+            print("Error preparing statement for ID lookup")
+            #endif
+            return nil
+        }
+
+        sqlite3_bind_int64(statement, 1, id)
+
+        var entry: DictionaryEntry?
+        if sqlite3_step(statement) == SQLITE_ROW {
+            entry = createEntry(from: statement)
+        }
+
+        sqlite3_finalize(statement)
+        return entry
+    }
+
     public func loadEntries() -> [DictionaryEntry] {
         var entries: [DictionaryEntry] = []
-        
+
         let queryString = """
             SELECT id,
                    cyrillic_word, cyrillic_part, cyrillic_def, cyrillic_example,
@@ -67,7 +186,7 @@ public class DatabaseManager {
                    english_word, english_part, english_def, english_example
             FROM words
         """
-        
+
         var statement: OpaquePointer?
 
         guard sqlite3_prepare_v2(db, queryString, -1, &statement, nil) == SQLITE_OK else {
@@ -76,60 +195,13 @@ public class DatabaseManager {
             #endif
             return []
         }
-        
-        // Helper function to safely extract strings
-        func safeString(from statement: OpaquePointer?, column: Int32) -> String {
-            guard let cString = sqlite3_column_text(statement, column) else {
-                return ""
-            }
-            return String(cString: cString)
-        }
-        
+
         while sqlite3_step(statement) == SQLITE_ROW {
-            let id = sqlite3_column_int64(statement, 0)
-            
-            let cyrillicWord = safeString(from: statement, column: 1)
-            let cyrillicPart = safeString(from: statement, column: 2)
-            let cyrillicDef = safeString(from: statement, column: 3)
-            let cyrillicExample = safeString(from: statement, column: 4)
-            
-            let latinWord = safeString(from: statement, column: 5)
-            let latinPart = safeString(from: statement, column: 6)
-            let latinDef = safeString(from: statement, column: 7)
-            let latinExample = safeString(from: statement, column: 8)
-            
-            let englishWord = safeString(from: statement, column: 9)
-            let englishPart = safeString(from: statement, column: 10)
-            let englishDef = safeString(from: statement, column: 11)
-            let englishExample = safeString(from: statement, column: 12)
-            
-            let entry = DictionaryEntry(
-                id: id,
-                translation: .init(
-                    cyrillic: .init(
-                        word: cyrillicWord,
-                        part_of_speech: cyrillicPart,
-                        definition: cyrillicDef,
-                        example_sentence: cyrillicExample
-                    ),
-                    latin: .init(
-                        word: latinWord,
-                        part_of_speech: latinPart,
-                        definition: latinDef,
-                        example_sentence: latinExample
-                    ),
-                    english: .init(
-                        word: englishWord,
-                        part_of_speech: englishPart,
-                        definition: englishDef,
-                        example_sentence: englishExample
-                    )
-                )
-            )
-            
-            entries.append(entry)
+            if let entry = createEntry(from: statement) {
+                entries.append(entry)
+            }
         }
-        
+
         sqlite3_finalize(statement)
         return entries
     }
