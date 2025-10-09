@@ -43,7 +43,7 @@ This application will be available on the iOS App Store. Follow for updates on t
 
 ## Legal
 
-© 2024 Marko Ljuboja. All rights reserved. 
+© 2025 Marko Ljuboja. All rights reserved. 
 This software is proprietary. The source code is made public for demonstration purposes only and is not available for use, modification, or distribution under any circumstances without explicit written permission.
 
 ## Contact
