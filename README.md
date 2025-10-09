@@ -1,6 +1,6 @@
 # Serbian-English Dictionary iOS App
 
-A modern iOS dictionary application that helps users translate between Serbian (both Cyrillic and Latin scripts) and English, built with SwiftUI. Coming soon to the App Store!
+A modern iOS dictionary application that helps users translate between Serbian (both Cyrillic and Latin scripts) and English, built with SwiftUI. Coming to the App Store October 2025!
 **Words added frequently**
 
 <p align="center">
