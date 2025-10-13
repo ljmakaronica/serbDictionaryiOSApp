@@ -162,6 +162,44 @@ struct WordListItemView: View {
     }
 }
 
+struct DatabaseErrorView: View {
+    let errorMessage: String
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 60))
+                .foregroundColor(.orange)
+
+            Text("Database Error")
+                .font(.title2)
+                .fontWeight(.bold)
+
+            Text(errorMessage)
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Try these steps:")
+                    .font(.headline)
+                Text("• Restart the app")
+                Text("• Check available storage")
+                Text("• Reinstall if the issue persists")
+            }
+            .font(.subheadline)
+            .foregroundColor(.secondary)
+            .padding()
+            .background(Color(.systemGray6))
+            .cornerRadius(12)
+            .padding(.horizontal)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemBackground))
+    }
+}
+
 struct WordListView: View {
     let filteredWords: [DictionaryEntry]
     let isEnglishToSerbian: Bool
@@ -278,6 +316,7 @@ struct ContentView: View {
     @State private var starButtonRotation: Double = 0
 
     @State private var isLoading = true
+    @State private var databaseError: String?
 
     private var currentDictionary: [DictionaryEntry] {
         dictionary.sorted {
@@ -322,12 +361,17 @@ struct ContentView: View {
 
     private func loadDictionary() {
         Task {
-            let entries = await Task.detached {
-                DatabaseManager.shared.loadEntries()
+            let (entries, error) = await Task.detached {
+                let dbManager = DatabaseManager.shared
+                if !dbManager.isReady {
+                    return ([], dbManager.lastError)
+                }
+                return (dbManager.loadEntries(), nil)
             }.value
 
             await MainActor.run {
                 dictionary = entries
+                databaseError = error
                 isLoading = false
             }
         }
@@ -398,12 +442,16 @@ struct ContentView: View {
                     }
                 }
 
-                WordListView(
-                    filteredWords: filterWords(),
-                    isEnglishToSerbian: isEnglishToSerbian,
-                    isLoading: isLoading,
-                    selectedEntry: $selectedEntry
-                )
+                if let error = databaseError {
+                    DatabaseErrorView(errorMessage: error)
+                } else {
+                    WordListView(
+                        filteredWords: filterWords(),
+                        isEnglishToSerbian: isEnglishToSerbian,
+                        isLoading: isLoading,
+                        selectedEntry: $selectedEntry
+                    )
+                }
             }
             .animation(.easeInOut(duration: 0.3), value: showWordOfDay)
             .navigationTitle(isEnglishToSerbian ? "English-Serbian" : "Српски-Енглески")
@@ -469,7 +517,7 @@ struct DictionaryApp: App {
                         return
                     }
 
-                    if let entry = DatabaseManager.shared.loadEntries().first(where: { $0.id == id }) {
+                    if let entry = DatabaseManager.shared.loadEntry(byId: id) {
                         NotificationCenter.default.post(
                             name: NSNotification.Name("ShowWordDetail"),
                             object: nil,

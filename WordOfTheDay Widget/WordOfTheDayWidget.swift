@@ -75,6 +75,9 @@ struct Provider: TimelineProvider {
     }
     
     private func loadWordOfDay() -> DictionaryEntry {
+        guard DatabaseManager.shared.isReady else {
+            return loadPlaceholderEntry()
+        }
         let entries = DatabaseManager.shared.loadEntries()
         return DictionaryEntry.wordOfTheDay(from: entries) ?? loadPlaceholderEntry()
     }

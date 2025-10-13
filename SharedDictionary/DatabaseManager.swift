@@ -1,10 +1,19 @@
 import Foundation
 import SQLite3
 
+public enum DatabaseError: Error {
+    case setupFailed(String)
+    case notInitialized
+    case queryFailed(String)
+}
+
 public class DatabaseManager {
     public static let shared = DatabaseManager()
     private var db: OpaquePointer?
-    
+
+    public private(set) var isReady: Bool = false
+    public private(set) var lastError: String?
+
     private init() {
         setupDatabase()
     }
@@ -13,10 +22,11 @@ public class DatabaseManager {
         // First try to get the database from the app group container
         if let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.serbdictionary.identifier") {
             let dbPath = containerURL.appendingPathComponent("dictionary.db").path
-            
+
             // Check if database exists in container
             if FileManager.default.fileExists(atPath: dbPath) {
                 if sqlite3_open(dbPath, &db) == SQLITE_OK {
+                    isReady = true
                     #if DEBUG
                     print("Successfully opened database from app group container")
                     #endif
@@ -29,31 +39,44 @@ public class DatabaseManager {
                 do {
                     try FileManager.default.copyItem(atPath: bundleDBPath, toPath: dbPath)
                     if sqlite3_open(dbPath, &db) == SQLITE_OK {
+                        isReady = true
                         #if DEBUG
                         print("Successfully copied and opened database in app group container")
                         #endif
                         return
+                    } else {
+                        lastError = "Failed to open database after copying"
                     }
                 } catch {
+                    lastError = "Failed to copy database: \(error.localizedDescription)"
                     #if DEBUG
                     print("Error copying database to container: \(error)")
                     #endif
                 }
+            } else {
+                lastError = "Database file not found in app bundle"
             }
+        } else {
+            lastError = "Failed to access app group container"
         }
 
         // Fallback to bundle database if app group access fails
         if let bundleDBPath = Bundle.main.path(forResource: "dictionary", ofType: "db") {
             if sqlite3_open(bundleDBPath, &db) == SQLITE_OK {
+                isReady = true
+                lastError = nil // Clear any previous error
                 #if DEBUG
                 print("Successfully opened database from bundle")
                 #endif
             } else {
+                lastError = "Failed to open database from bundle"
                 #if DEBUG
                 print("Error opening database")
                 #endif
                 db = nil
             }
+        } else if !isReady {
+            lastError = "Database file not found anywhere"
         }
     }
     
@@ -111,6 +134,13 @@ public class DatabaseManager {
 
     // Load entries starting with a specific letter (for progressive loading)
     public func loadEntries(startingWith letter: String, isEnglish: Bool) -> [DictionaryEntry] {
+        guard isReady else {
+            #if DEBUG
+            print("Database not ready, cannot load entries")
+            #endif
+            return []
+        }
+
         var entries: [DictionaryEntry] = []
 
         let columnName = isEnglish ? "english_word" : "cyrillic_word"
@@ -147,6 +177,13 @@ public class DatabaseManager {
 
     // Load a specific entry by ID (for Word of the Day)
     public func loadEntry(byId id: Int64) -> DictionaryEntry? {
+        guard isReady else {
+            #if DEBUG
+            print("Database not ready, cannot load entry")
+            #endif
+            return nil
+        }
+
         let queryString = """
             SELECT id,
                    cyrillic_word, cyrillic_part, cyrillic_def, cyrillic_example,
@@ -177,6 +214,13 @@ public class DatabaseManager {
     }
 
     public func loadEntries() -> [DictionaryEntry] {
+        guard isReady else {
+            #if DEBUG
+            print("Database not ready, cannot load entries")
+            #endif
+            return []
+        }
+
         var entries: [DictionaryEntry] = []
 
         let queryString = """
