@@ -2,9 +2,9 @@ import SwiftUI
 
 // MARK: - Color Extension
 public extension Color {
-   public static let partOfSpeechColors = PartOfSpeechColors()
+   static let partOfSpeechColors = PartOfSpeechColors()
    
-   public struct PartOfSpeechColors {
+    struct PartOfSpeechColors {
        public let noun = Color.blue.opacity(0.75)
        public let verb = Color.green.opacity(0.75)
        public let adjective = Color.purple.opacity(0.75)

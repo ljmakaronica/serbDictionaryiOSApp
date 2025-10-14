@@ -1,43 +1,6 @@
 import SwiftUI
 import SharedDictionary
 
-// MARK: - Custom Language Selector
-struct LanguageSelectorView: View {
-    @Binding var isEnglishToSerbian: Bool
-    private let haptic = UIImpactFeedbackGenerator(style: .light)
-    
-    var body: some View {
-        ZStack {
-            Capsule()
-                .fill(Color(.systemGray5))
-                .frame(width: 100, height: 32)
-            
-            HStack(spacing: 0) {
-                Capsule()
-                    .fill(Color.blue)
-                    .frame(width: 42, height: 26)
-                    .offset(x: isEnglishToSerbian ? 25 : -25)
-                    .animation(.easeInOut(duration: 0.2), value: isEnglishToSerbian)
-            }
-            
-            HStack(spacing: 16) {
-                Text("🇷🇸")
-                    .frame(width: 32)
-                    .opacity(isEnglishToSerbian ? 0.5 : 1.0)
-                Text("🇺🇸")
-                    .frame(width: 32)
-                    .opacity(isEnglishToSerbian ? 1.0 : 0.5)
-            }
-        }
-        .onTapGesture {
-            haptic.impactOccurred()
-            withAnimation {
-                isEnglishToSerbian.toggle()
-            }
-        }
-    }
-}
-
 // MARK: - Views
 struct WordOfTheDayCard: View {
     let entry: DictionaryEntry
@@ -48,7 +11,7 @@ struct WordOfTheDayCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(isEnglishToSerbian ? "Word Of The Day" : "Реч Дана")
+                Text(isEnglishToSerbian ? "Word of the Day" : "Реч Дана")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.secondary)
                 
@@ -59,6 +22,7 @@ struct WordOfTheDayCard: View {
                         .foregroundColor(.secondary)
                         .font(.system(size: 20))
                 }
+                .applyGlassEffect()
             }
             
             if isEnglishToSerbian {
@@ -247,42 +211,6 @@ struct WordListView: View {
     }
 }
 
-struct SearchBar: View {
-    @Binding var text: String
-    
-    var body: some View {
-        HStack {
-            TextField("Претражи | Pretraži | Search", text: $text)
-                .padding(8)
-                .background(Color(.systemGray6))
-                .cornerRadius(8)
-                .submitLabel(.done)
-                .onSubmit {
-                    UIApplication.shared.sendAction(
-                        #selector(UIResponder.resignFirstResponder),
-                        to: nil,
-                        from: nil,
-                        for: nil
-                    )
-                }
-            if !text.isEmpty {
-                Button(action: {
-                    text = ""
-                    UIApplication.shared.sendAction(
-                        #selector(UIResponder.resignFirstResponder),
-                        to: nil,
-                        from: nil,
-                        for: nil
-                    )
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.secondary)
-                }
-            }
-        }
-    }
-}
-
 class NotificationHandler: ObservableObject {
     var onEntrySelected: ((DictionaryEntry) -> Void)?
     
@@ -415,9 +343,6 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 16) {
-                SearchBar(text: $searchText)
-                    .padding(.horizontal)
-
                 // Word of the Day Card - Show skeleton while loading
                 if showWordOfDay {
                     if isLoading {
@@ -454,28 +379,45 @@ struct ContentView: View {
                 }
             }
             .animation(.easeInOut(duration: 0.3), value: showWordOfDay)
-            .navigationTitle(isEnglishToSerbian ? "English-Serbian" : "Српски-Енглески")
+            .navigationTitle(isEnglishToSerbian ? "English" : "Српски")
+            .navigationBarTitleDisplayMode(.inline)
+            .searchable(text: $searchText, prompt: "Претражи | Pretraži | Search")
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    if !showWordOfDay {
+                // TRAILING: Replace both original buttons with ellipsis menu
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        // Switch language
+                        Button(action: {
+                            isEnglishToSerbian.toggle()
+                        }) {
+                            Label(
+                                isEnglishToSerbian ? "Српски" : "English",
+                                systemImage: "arrow.left.arrow.right"
+                            )
+                        }
+
+                        // Toggle Word of the Day
                         Button(action: {
                             withAnimation {
-                                starButtonRotation += 360
-                                showWordOfDay = true
+                                showWordOfDay.toggle()
                             }
                         }) {
-                            Image(systemName: "calendar.badge.clock")
-                                .font(.system(size: 22))
-                                .rotationEffect(.degrees(starButtonRotation))
-                                .animation(.easeInOut(duration: 0.3), value: starButtonRotation)
+                            Label(
+                                isEnglishToSerbian ?
+                                    (showWordOfDay ? "Hide Word of the Day" : "Show Word of the Day") :
+                                    (showWordOfDay ? "Сакриј Реч Дана" : "Прикажи Реч Дана"),
+                                systemImage: "calendar.badge.clock"
+                            )
                         }
+
+                        // Add more options later if needed
+                    } label: {
+                        Image(systemName: "ellipsis")
+                            .font(.system(size: 22))
                     }
                 }
 
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    LanguageSelectorView(isEnglishToSerbian: $isEnglishToSerbian)
-                }
-
+                // BOTTOM BAR: Stays unchanged
                 ToolbarItem(placement: .bottomBar) {
                     AlphabetBarView(
                         isEnglishToSerbian: isEnglishToSerbian,
@@ -486,6 +428,7 @@ struct ContentView: View {
                     )
                 }
             }
+
             .sheet(item: $selectedEntry) { entry in
                 NavigationView {
                     WordDetailView(entry: entry, isEnglishToSerbian: isEnglishToSerbian)
@@ -529,3 +472,13 @@ struct DictionaryApp: App {
     }
 }
 
+extension View {
+    @ViewBuilder
+    func applyGlassEffect() -> some View {
+        if #available(iOS 26.0, *) {
+            self.glassEffect(.regular.interactive())
+        } else {
+            self
+        }
+    }
+}

@@ -20,11 +20,11 @@ struct WordDetailView: View {
                             Image(systemName: "xmark.circle.fill")
                                 .font(.system(size: 28))
                                 .foregroundColor(.secondary)
+                                .applyGlassEffect()
                                 .padding(.trailing)
                                 .padding(.top, 8)
                         }
                     }
-
                     VStack(spacing: 24) {
                         if isEnglishToSerbian {
                             englishCard
@@ -109,12 +109,7 @@ enum Language {
     case english
     case serbian
     
-    var flag: String {
-        switch self {
-        case .english: return "🇺🇸"
-        case .serbian: return "🇷🇸"
-        }
-    }
+    
     
     var label: String {
         switch self {
@@ -225,11 +220,9 @@ struct WordCard: View {
         VStack(alignment: .leading, spacing: 16) {
             // Header
             HStack(spacing: 8) {
-                Text(language.flag)
-                    .font(.system(size: 24))
-                Text(language.label)
+                Text(language == .english ? "English" : (selectedScript == .cyrillic ? "Српски" : "Srpski"))
                     .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.primary)
             }
 
             // Script switcher (Serbian only)
