@@ -361,7 +361,7 @@ struct ContentView: View {
 
     private func loadDictionary() {
         Task {
-            let (entries, error) = await Task.detached {
+            let (entries, error) = await Task.detached { () -> ([DictionaryEntry], String?) in
                 let dbManager = DatabaseManager.shared
                 if !dbManager.isReady {
                     return ([], dbManager.lastError)
