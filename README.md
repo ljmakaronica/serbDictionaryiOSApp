@@ -5,11 +5,10 @@ A modern iOS dictionary application that helps users translate between Serbian (
 **Words added frequently**
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/93028b7a-18e3-4d3c-b869-90be806e7a37" width="199" />
-  <img src="https://github.com/user-attachments/assets/880e563c-1676-403d-98ad-c2c5e25429cb" width="199" />
-  <img src="https://github.com/user-attachments/assets/c93347fc-b36b-4b32-bd98-293daa908e32" width="199" />
-  <img src="https://github.com/user-attachments/assets/943f14ca-f242-49f4-b128-bc92d2fe4a56" width="199" />
-  <img src="https://github.com/user-attachments/assets/c7fbd0ac-89c4-4a0f-877f-5e0b8f142053" width="199" />
+  <img width="240" height="520" alt="IMG_8740" src="https://github.com/user-attachments/assets/4014f6b2-f320-4e9c-9138-17b9dc51a9a9" />
+  <img width="240" height="520" alt="IMG_8739" src="https://github.com/user-attachments/assets/ecd52b60-197b-4201-a1e1-7aa1b4d67568" />
+  <img width="240" height="520" alt="IMG_8741" src="https://github.com/user-attachments/assets/cd5a2341-16d2-472c-ba1e-b3003ecc1332" />
+  <img width="240" height="520" alt="IMG_8742" src="https://github.com/user-attachments/assets/9b496845-8334-4e46-a417-5db350b0ea5b" />
 </p>
 
 ## Features
