@@ -126,6 +126,28 @@ struct WordListItemView: View {
     }
 }
 
+struct UpdateToast: View {
+    let count: Int
+    let isEnglish: Bool
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundColor(.green)
+            Text(isEnglish ? "\(count) new word\(count == 1 ? "" : "s") added!" : "\(count) нов\(count == 1 ? "а реч додата" : "е речи додате")!")
+                .font(.subheadline)
+                .fontWeight(.medium)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(
+            Capsule()
+                .fill(Color(.systemBackground))
+                .shadow(color: Color.primary.opacity(0.15), radius: 10, x: 0, y: 5)
+        )
+    }
+}
+
 struct DatabaseErrorView: View {
     let errorMessage: String
 
@@ -245,6 +267,8 @@ struct ContentView: View {
 
     @State private var isLoading = true
     @State private var databaseError: String?
+    @State private var updateCount: Int = 0
+    @State private var showUpdateToast: Bool = false
 
     private var currentDictionary: [DictionaryEntry] {
         dictionary.sorted {
@@ -289,6 +313,9 @@ struct ContentView: View {
 
     private func loadDictionary() {
         Task {
+            // Check for remote updates first
+            let updates = await UpdateManager.shared.checkForUpdates()
+
             let (entries, error) = await Task.detached { () -> ([DictionaryEntry], String?) in
                 let dbManager = DatabaseManager.shared
                 if !dbManager.isReady {
@@ -301,6 +328,20 @@ struct ContentView: View {
                 dictionary = entries
                 databaseError = error
                 isLoading = false
+
+                // Show toast if updates were applied
+                if updates > 0 {
+                    updateCount = updates
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        showUpdateToast = true
+                    }
+                    // Auto-hide after 3 seconds
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            showUpdateToast = false
+                        }
+                    }
+                }
             }
         }
     }
@@ -436,6 +477,13 @@ struct ContentView: View {
             }
         }
         .navigationViewStyle(StackNavigationViewStyle())
+        .overlay(alignment: .top) {
+            if showUpdateToast {
+                UpdateToast(count: updateCount, isEnglish: isEnglishToSerbian)
+                    .padding(.top, 60)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
         .onAppear {
             loadDictionary()
             notificationHandler.onEntrySelected = { entry in

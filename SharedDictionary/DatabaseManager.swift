@@ -250,6 +250,119 @@ public class DatabaseManager {
         return entries
     }
     
+    // MARK: - Write Operations (for remote updates)
+
+    public func insertEntry(_ entry: UpdateEntry) {
+        guard isReady else { return }
+
+        let sql = """
+            INSERT INTO words (
+                cyrillic_word, cyrillic_part, cyrillic_def, cyrillic_example,
+                latin_word, latin_part, latin_def, latin_example,
+                english_word, english_part, english_def, english_example
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            #if DEBUG
+            print("DatabaseManager: Failed to prepare insert statement")
+            #endif
+            return
+        }
+
+        sqlite3_bind_text(statement, 1, ((entry.cyrillic_word ?? "") as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 2, ((entry.cyrillic_part ?? "") as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 3, ((entry.cyrillic_def ?? "") as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 4, ((entry.cyrillic_example ?? "") as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 5, ((entry.latin_word ?? "") as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 6, ((entry.latin_part ?? "") as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 7, ((entry.latin_def ?? "") as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 8, ((entry.latin_example ?? "") as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 9, ((entry.english_word ?? "") as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 10, ((entry.english_part ?? "") as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 11, ((entry.english_def ?? "") as NSString).utf8String, -1, nil)
+        sqlite3_bind_text(statement, 12, ((entry.english_example ?? "") as NSString).utf8String, -1, nil)
+
+        if sqlite3_step(statement) != SQLITE_DONE {
+            #if DEBUG
+            print("DatabaseManager: Failed to insert entry")
+            #endif
+        }
+
+        sqlite3_finalize(statement)
+    }
+
+    public func updateEntry(_ entry: UpdateEntry) {
+        guard isReady, let id = entry.id else { return }
+
+        // Build dynamic UPDATE query based on which fields are provided
+        var setClauses: [String] = []
+        var values: [String] = []
+
+        if let v = entry.cyrillic_word { setClauses.append("cyrillic_word = ?"); values.append(v) }
+        if let v = entry.cyrillic_part { setClauses.append("cyrillic_part = ?"); values.append(v) }
+        if let v = entry.cyrillic_def { setClauses.append("cyrillic_def = ?"); values.append(v) }
+        if let v = entry.cyrillic_example { setClauses.append("cyrillic_example = ?"); values.append(v) }
+        if let v = entry.latin_word { setClauses.append("latin_word = ?"); values.append(v) }
+        if let v = entry.latin_part { setClauses.append("latin_part = ?"); values.append(v) }
+        if let v = entry.latin_def { setClauses.append("latin_def = ?"); values.append(v) }
+        if let v = entry.latin_example { setClauses.append("latin_example = ?"); values.append(v) }
+        if let v = entry.english_word { setClauses.append("english_word = ?"); values.append(v) }
+        if let v = entry.english_part { setClauses.append("english_part = ?"); values.append(v) }
+        if let v = entry.english_def { setClauses.append("english_def = ?"); values.append(v) }
+        if let v = entry.english_example { setClauses.append("english_example = ?"); values.append(v) }
+
+        guard !setClauses.isEmpty else { return }
+
+        let sql = "UPDATE words SET \(setClauses.joined(separator: ", ")) WHERE id = ?"
+
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            #if DEBUG
+            print("DatabaseManager: Failed to prepare update statement")
+            #endif
+            return
+        }
+
+        for (index, value) in values.enumerated() {
+            sqlite3_bind_text(statement, Int32(index + 1), (value as NSString).utf8String, -1, nil)
+        }
+        sqlite3_bind_int64(statement, Int32(values.count + 1), id)
+
+        if sqlite3_step(statement) != SQLITE_DONE {
+            #if DEBUG
+            print("DatabaseManager: Failed to update entry \(id)")
+            #endif
+        }
+
+        sqlite3_finalize(statement)
+    }
+
+    public func deleteEntry(id: Int64) {
+        guard isReady else { return }
+
+        let sql = "DELETE FROM words WHERE id = ?"
+
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            #if DEBUG
+            print("DatabaseManager: Failed to prepare delete statement")
+            #endif
+            return
+        }
+
+        sqlite3_bind_int64(statement, 1, id)
+
+        if sqlite3_step(statement) != SQLITE_DONE {
+            #if DEBUG
+            print("DatabaseManager: Failed to delete entry \(id)")
+            #endif
+        }
+
+        sqlite3_finalize(statement)
+    }
+
     deinit {
         if let db = db {
             sqlite3_close(db)
